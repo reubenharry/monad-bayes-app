@@ -62,7 +62,7 @@ instance Distributive VBounded where
   distribute = distributeRep
 
 gridSize :: Int
-gridSize = 5
+gridSize = 20
 
 -- you can view a grid as a function from indices to square values
 -- or as an array of square values.
@@ -74,30 +74,28 @@ instance Representable VBounded where
   tabulate desc = VBounded $ V.generate gridSize desc
 
 
-mkGrid :: [(Int, Int)] -> Grid Color
-mkGrid xs = store lookup (0, 0)
-  where
-    lookup crd = if crd `elem` xs then black else red
+mkGrid :: [(Int, Int)] -> Grid Bool
+mkGrid xs = store (`elem` xs) (0, 0)
 
 -----
 -- use the comonadic nature of the grid to apply rules at each square
 -----
 
-type Rule = Grid Color -> Int
+type Rule = Grid Bool -> Int
 
 
 
 
 -- The prior is uniform over all configurations of the grid
 -- We score states based on their energy
-model :: MonadInfer m => m (Grid Color)
+model :: MonadInfer m => m (Grid Bool)
 model = do
-    let allCoords = [(x,y) | x <- [1..20], y <- [1..20]]
+    let allCoords = [(x,y) | x <- [0..19], y <- [0..19]]
     coords <- filterM (const $ bernoulli 0.5) allCoords
     let grid = mkGrid coords
         StoreT (Identity energy) _ = extend interactionEnergy grid
         score  = getSum $ foldMap Sum energy
-    factor $ fromIntegral score
+    factor $ exp $ fromIntegral score
     return grid
 
 
@@ -132,12 +130,15 @@ square :: Picture
 square =  Polygon [(0,0), (0,size), (size,size), (size,0)]
 
 
-display :: Grid Color -> String
-display (StoreT (Identity (Compose grid)) _) = foldMap (\c -> foldMap (\x -> if x == black then "0" else "1") c <> "\n") grid
+display :: Grid Bool -> String
+display (StoreT (Identity (Compose grid)) _) = foldMap (\c -> foldMap (\x -> if x then "1" else "0") c <> "\n") grid
 
 samples = do
-  s <- sampleIO (runPopulation $ smcMultinomial 25 100 model)
-  mapM_ ((\(x,weight) -> putStrLn (show weight <> "\n\n" <> display x) )) ( s)
+  -- s <- sampleIO (runPopulation $ smcMultinomial 25 100 model)
+  -- mapM_ ((\(x,weight) -> putStrLn (show weight <> "\n\n" <> display x) )) ( s)
+
+  s <- sampleIO $ prior $ mh 1000 model
+  mapM_ (\x -> putStrLn ("\n\n" <> display x)) $ reverse s
 
 
 main :: IO ()
@@ -146,5 +147,5 @@ main = do
     -- print i
     grid <- fmap cycle $ sampleIO $ prior $ mh 10 model
 
-    simulate FullScreen white 20 grid (render . head) (\_ _ -> tail)
+    simulate FullScreen white 20 grid (render . undefined . head) (\_ _ -> tail)
     -- simulateIO FullScreen white 10 (bernoulli 0.5) (\x -> do b <- sampleIO x; return $ Text $ show b) (\_ _ -> return)
