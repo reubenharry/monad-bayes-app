@@ -51,6 +51,7 @@ import Pipes.Prelude (unfoldr)
 import qualified Pipes.Prelude as P
 import Debug.Trace (traceM)
 import Control.Applicative (Applicative(liftA2))
+import qualified Control.Monad.Bayes.Population as PP
 
 
 -- functional reactive application: guess if you're a bot or not in real time:
@@ -161,3 +162,16 @@ newtype Point = Point {toPair :: [(Double,Double)]}
 instance Num Point where
     Point p1 + Point p2 = Point (zipWith (\(x,y)  (x',y') -> (x+x',y+y') ) p1 p2)
     fromInteger (_) = undefined
+
+
+-- aa :: Int -> m [(a, Log Double)]
+-- aa :: Sequential (Population (SamplerIO )) a
+--     -> m
+--         [(a,  Log Double)]
+-- aa = sampleIO . runPopulation . sir ((PP.hoist put) . resampleMultinomial) 10 10
+
+
+-- pr x = do
+--     x' <- x
+--     tell x'
+--     return x'
