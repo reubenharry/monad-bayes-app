@@ -1,3 +1,5 @@
 .vscode
 .stack-work/
 *~
+notebooks/Plotting.*
+!notebooks/Plotting.hs
