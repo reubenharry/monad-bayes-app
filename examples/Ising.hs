@@ -10,10 +10,6 @@ import Control.Monad.Bayes.Class (MonadSample(bernoulli, uniformD), factor, Mona
 import Control.Monad.Bayes.Sampler (sampleIO)
 import Control.Monad.Bayes.Traced (mh)
 import Control.Monad.Bayes.Weighted
-
-
-
-
 import Data.Functor.Compose (Compose(..))
 import qualified Data.Vector as V
 import Data.Bool (bool)
@@ -52,19 +48,21 @@ import Control.Monad.Bayes.Population (runPopulation)
 -- Define a grid as a board and a pointer to a square
 ------
 
+-- | Grid a ~ ([[a]], (Int, Int))
 type Grid a = Store (Compose VBounded VBounded) a
 
--- A (VBounded a) is an array of 20 a's
+-- | VBounded a ~ [a]
 newtype VBounded a = VBounded (V.Vector a)
   deriving (Eq, Show, Functor, Foldable)
 
 instance Distributive VBounded where
   distribute = distributeRep
 
+-- | size of the Ising grid
 gridSize :: Int
 gridSize = 20
 
--- you can view a grid as a function from indices to square values
+-- | you can view a grid as a function from indices to square values
 -- or as an array of square values.
 -- These two structures are isomorphic, as witnessed by: 
 -- index . tabulate === id === tabulate . index
@@ -73,7 +71,7 @@ instance Representable VBounded where
   index (VBounded v) i = v V.! (i `mod` gridSize)
   tabulate desc = VBounded $ V.generate gridSize desc
 
-
+-- | make a grid
 mkGrid :: [(Int, Int)] -> Grid Bool
 mkGrid xs = store (`elem` xs) (0, 0)
 
@@ -83,10 +81,18 @@ mkGrid xs = store (`elem` xs) (0, 0)
 
 type Rule = Grid Bool -> Int
 
+-- | comonadically calculate the energy of the grid
+interactionEnergy :: Rule
+interactionEnergy g = numNeighboursSame
+  where
+    numNeighboursSame = length (filter (==color) neighbours)
+    color = extract g
+    neighbours = experiment (\s -> addCoords s <$> neighbourCoords) g
+    addCoords (x, y) (x', y') = (x + x', y + y')
+    neighbourCoords = [(x, y) | x <- [-1, 0, 1], y <- [-1, 0, 1], (x, y) /= (0, 0)]
 
 
-
--- The prior is uniform over all configurations of the grid
+-- | The prior is uniform over all configurations of the grid
 -- We score states based on their energy
 model :: MonadInfer m => m (Grid Bool)
 model = do
@@ -99,14 +105,19 @@ model = do
     return grid
 
 
-interactionEnergy :: Rule
-interactionEnergy g = numNeighboursSame
-  where
-    color = extract g
-    neighbours = experiment (\s -> addCoords s <$> neighbourCoords) g
-    numNeighboursSame = length (filter (==color) neighbours)
-    addCoords (x, y) (x', y') = (x + x', y + y')
-    neighbourCoords = [(x, y) | x <- [-1, 0, 1], y <- [-1, 0, 1], (x, y) /= (0, 0)]
+
+---
+-- render a grid into ascii
+---
+
+display :: Grid Bool -> String
+display (StoreT (Identity (Compose grid)) _) = 
+  foldMap (\c -> 
+    foldMap (\x -> if x then "1" else "0") c <> "\n") grid
+
+samples = do
+  s <- sampleIO $ prior $ mh 10 model
+  mapM_ (\x -> putStrLn ("\n\n" <> display x)) $ reverse s
 
 
 ---
@@ -129,16 +140,6 @@ size = 10
 square :: Picture
 square =  Polygon [(0,0), (0,size), (size,size), (size,0)]
 
-
-display :: Grid Bool -> String
-display (StoreT (Identity (Compose grid)) _) = foldMap (\c -> foldMap (\x -> if x then "1" else "0") c <> "\n") grid
-
-samples = do
-  -- s <- sampleIO (runPopulation $ smcMultinomial 25 100 model)
-  -- mapM_ ((\(x,weight) -> putStrLn (show weight <> "\n\n" <> display x) )) ( s)
-
-  s <- sampleIO $ prior $ mh 1000 model
-  mapM_ (\x -> putStrLn ("\n\n" <> display x)) $ reverse s
 
 
 main :: IO ()

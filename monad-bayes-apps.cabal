@@ -25,55 +25,81 @@ source-repository head
 
 library
   exposed-modules:
-      Ising
+      Dunai
       Lib
       Outliers
+      Ising
   other-modules:
       Paths_monad_bayes_apps
   hs-source-dirs:
       src
+      examples
   build-depends:
-      adjunctions
+      Yampa
+    , adjunctions
     , aeson
     , base
+    , brick
     , comonad
     , containers
+    , diagrams
+    , diagrams-cairo
     , distributive
+    , dunai
     , gloss
     , hvega
+    , ihaskell-diagrams
     , ihaskell-hvega
     , integration
     , lens
+    , linear
+    , log-domain
     , monad-bayes
+    , mtl
     , mwc-random
     , pipes
+    , random
     , vector
+    , yampa-gloss
   default-language: Haskell2010
 
-executable monad-bayes-apps-exe
+executable monad-bayes-apps
   main-is: Main.hs
   other-modules:
+      Dunai
+      Lib
+      Outliers
       Paths_monad_bayes_apps
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+      src
   build-depends:
-      adjunctions
+      Yampa
+    , adjunctions
     , aeson
     , base
+    , brick
     , comonad
     , containers
+    , diagrams
+    , diagrams-cairo
     , distributive
+    , dunai
     , gloss
     , hvega
+    , ihaskell-diagrams
     , ihaskell-hvega
     , integration
     , lens
+    , linear
+    , log-domain
     , monad-bayes
-    , monad-bayes-apps
+    , mtl
     , mwc-random
     , pipes
+    , random
     , vector
+    , yampa-gloss
   default-language: Haskell2010
 
 test-suite monad-bayes-apps-test
@@ -85,20 +111,31 @@ test-suite monad-bayes-apps-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      adjunctions
+      Yampa
+    , adjunctions
     , aeson
     , base
+    , brick
     , comonad
     , containers
+    , diagrams
+    , diagrams-cairo
     , distributive
+    , dunai
     , gloss
     , hvega
+    , ihaskell-diagrams
     , ihaskell-hvega
     , integration
     , lens
+    , linear
+    , log-domain
     , monad-bayes
     , monad-bayes-apps
+    , mtl
     , mwc-random
     , pipes
+    , random
     , vector
+    , yampa-gloss
   default-language: Haskell2010

@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import Dunai
 
 main :: IO ()
-main = print () -- someFunc
+main = gl
